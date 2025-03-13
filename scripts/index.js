@@ -3,15 +3,16 @@
 //       "category_id": "1001",
 //       "category": "Music"
 //   },
-//   {
-//       "category_id": "1003",
-//       "category": "Comedy"
-//   },
-//   {
-//       "category_id": "1005",
-//       "category": "Drawing"
-//   }
-// ]
+const showLoader = () =>{
+  document.getElementById('show-loader').classList.remove('hidden')
+  document.getElementById('videos-container').classList.add('hidden')
+}
+
+const hideLoader = () =>{
+  document.getElementById('show-loader').classList.add('hidden')
+  document.getElementById('videos-container').classList.remove('hidden')
+}
+
 function removeActiveClass (){
   const activeClass = document.getElementsByClassName('active');
   for(let btn of activeClass){
@@ -32,33 +33,15 @@ const displayCategories=(category)=>{
     // console.log(category)
     const div = document.createElement('div');
     div.innerHTML =`
-    <button id="btn-${cate.category_id}" onclick="categoryVideo(${cate.category_id})" class="btn bg-[#25252520] hover:bg-[#FF1F3D]  hover:text-white">${cate.category}</button>
+    <button id="btn-${cate.category_id}" onclick="categoryVideo(${cate.category_id})" class="btn bg-[#25252520]">${cate.category}</button>
     `
     categoriesContainer.append(div);
   }
 }
 loadcategories()
 
-// videos
-// {
-//   "category_id": "1001",
-//   "video_id": "aaaa",
-//   "thumbnail": "https://i.ibb.co/L1b6xSq/shape.jpg",
-//   "title": "Shape of You",
-//   "authors": [
-//       {
-//           "profile_picture": "https://i.ibb.co/D9wWRM6/olivia.jpg",
-//           "profile_name": "Olivia Mitchell",
-//           "verified": ""
-//       }
-//   ],
-//   "others": {
-//       "views": "100K",
-//       "posted_date": "16278"
-//   },
-//   "description": "Dive into the rhythm of 'Shape of You,' a captivating track that blends pop sensibilities with vibrant beats. Created by Olivia Mitchell, this song has already gained 100K views since its release. With its infectious melody and heartfelt lyrics, 'Shape of You' is perfect for fans looking for an uplifting musical experience. Let the music take over as Olivia's vocal prowess and unique style create a memorable listening journey."
-// }
 const categoryVideo =(id)=>{
+  showLoader()
   const url = `https://openapi.programming-hero.com/api/phero-tube/category/${id}`
   console.log(url)
   fetch(url)
@@ -75,8 +58,9 @@ const categoryVideo =(id)=>{
 }
 
 
-const loadVideos =()=>{
-  fetch('https://openapi.programming-hero.com/api/phero-tube/videos')
+const loadVideos =(searchText = "")=>{
+  showLoader();
+  fetch(`https://openapi.programming-hero.com/api/phero-tube/videos?title=${searchText}`)
   .then(res=>res.json())
   .then(data=>{
     document.getElementById('btn-all').classList.add('active')
@@ -94,6 +78,7 @@ const displayVideos =(videos)=>{
         <h2 class="text-2xl font-bold">Oops!! Sorry, There is no content here</h2>
       </div>
     `
+    hideLoader()
     return;
   }
   videos.forEach(video => {
@@ -118,15 +103,49 @@ const displayVideos =(videos)=>{
         </div>
         <div class="intro space-y-1">
           <h2 class="card-title">${video.title}</h2>
-          <h2 class="text-sm text-gray-400 flex gap-2">${video.authors[0].profile_name}<img class="w-5 h-5" src="./assets/verified.png" alt=""></h2>
+          <h2 class="text-sm text-gray-400 flex gap-2">${video.authors[0].profile_name}
+          ${video.authors[0].verified== true ? `<img class="w-5 h-5" src="./assets/verified.png" alt=""></img>` : ``}
+          </h2>
           <h2 class="text-sm text-gray-400">${video.others.views} Views</h2>
         </div>
 
        </div>
       </div>
+      <button onclick= loadVideoDetails('${video.video_id}') class="btn btn-wide mt-3">Show Details</button>
     
     `
     videosContainer.append(div)
   });
-
+  hideLoader();
 }
+
+
+const loadVideoDetails=(videoId)=>{
+  const url = `https://openapi.programming-hero.com/api/phero-tube/video/${videoId}`
+  fetch(url)
+  .then(res=>res.json())
+  .then(data=> displayVideoDetails(data.video));
+}
+
+const displayVideoDetails = (videos)=>{
+  document.getElementById('video_details').showModal()
+  const detailsContainer = document.getElementById('details-container');
+  detailsContainer.innerHTML = `
+  <div class="card image-full ">
+  <figure>
+    <img
+      src="${videos.thumbnail}"
+      alt="Shoes" />
+  </figure>
+  <div class="card-body">
+    <h2 class="card-title">${videos.title}</h2>
+    <p>${videos.description}</p>
+  </div>
+</div>
+  `
+}
+
+document.getElementById('search-video').addEventListener('keyup', (e)=>{
+  const input = e.target.value;
+  loadVideos(input);
+})
